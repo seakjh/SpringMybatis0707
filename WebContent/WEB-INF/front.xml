@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xsi:schemaLocation="http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<!-- dispatcher서블릿은 하위 컨트롤러에 대한 결정을 짖기 위해
+	직접 분석하지 않고, handlerMapping에게 시키므로, 개발자가 사용할 handlerMapping을 결정지어야한다. .. 결정짓지 않을경우
+	DefaultAnnotationHandlerMapping을 자동으로 등록된다 -->
+	<bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping" 
+	id="handlerMapping"/>
+	<!-- 하위 컨트롤러가 요청처리 완료 후 저장결과 및 후에 대한 정보를 ModelAndView로 변환하는데, 
+	이 변환된 객체를 분석하여 어떤 뷰를 보여줄지 결정을 지으려면 DispatcherServlet 은 직접 분석하지 않고 ViewResolver를 통해 분석하게 되고,
+	이 분석후 알맞는 뷰페이지를 보여주게 된다.-->
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+	 id="viewResolver" p:prefix="/" p:suffix=".jsp"/>
+
+	<!-- bean등록원칙을 따르다 보면, 너무나 많은 bean태그가 등록될것이고,
+	유지보수성이 저하된다.. 따라서 자동등록 기능을 이용해보자 -->
+	
+	<context:component-scan base-package="com.it"/>
+	
+	<!-- 데이터베이스 연동 관련 bean -->
+	<jee:jndi-lookup id="dataSource" jndi-name="jdbc/oracle" resource-ref="true"/>
+	<!-- 스프링이 지원하는 데이터베이스 연동 기술을 사용하는 결정적이유?
+	트랜젝션을 자동으로 처리해준다!
+	따라서 현재 사용중인 기술에 알맞는 트랜젝션 매니저를 등록해야한다! 
+	JDBC, ibatist, mybatis : DataSourceTransactionManager
+	Hibernate : HibernateTransactionManager-->
+	<bean class="org.springframework.jdbc.datasource.DataSourceTransactionManager" 
+	id="dataSourceTransactionManager" p:dataSource-ref="dataSource"/>
+	<!-- 순수한 mybatis가 아니라, 스프링에서 사용할 수 있는 mybatis를 사용할 경우 기존의 쿼리문 수행시 우리가 사용했던 SqlSession을 그대로 사용하는 것이 아니라,
+	SqlSession을 매핑시켜놓은 SqlSessiongTemplate를 사용해야한다
+	주의  SqlSessiongTemplatedms   SqlSessiongFactoryBean으로 얻는다!
+	 -->
+	 <bean class="org.mybatis.spring.SqlSessionFactoryBean" id="sqlSessionFactoryBean">
+	 	<property name="configLocation" value="classpath:com/it/mybatis/config.xml"/>
+	 	<property name="dataSource" ref="dataSource"/>
+	 </bean>
+	
+	<bean class="org.mybatis.spring.SqlSessionTemplate" id="sqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactoryBean"/>
+	</bean>	
+</beans>
+
+
+
+
+
